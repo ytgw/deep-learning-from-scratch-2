@@ -11,7 +11,7 @@ wordvec_size = 100
 
 corpus, word_to_id, id_to_word = ptb.load_data('train')
 vocab_size = len(word_to_id)
-print('counting  co-occurrence ...')
+print('counting co-occurrence ...')
 C = create_co_matrix(corpus, vocab_size, window_size)
 print('calculating PPMI ...')
 W = ppmi(C, verbose=True)
