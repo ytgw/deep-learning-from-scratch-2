@@ -20,7 +20,7 @@ class SimpleCBOW:
         self.loss_layer = SoftmaxWithLoss()
 
         # すべての重みと勾配をリストにまとめる
-        layers = [self.in_layer0, self.in_layer1, self.out_layer]
+        layers = [self.in_layer0, self.in_layer1, self.out_layer, self.loss_layer]
         self.params, self.grads = [], []
         for layer in layers:
             self.params += layer.params
@@ -41,6 +41,6 @@ class SimpleCBOW:
         ds = self.loss_layer.backward(dout)
         da = self.out_layer.backward(ds)
         da *= 0.5
-        self.in_layer1.backward(da)
         self.in_layer0.backward(da)
+        self.in_layer1.backward(da)
         return None
