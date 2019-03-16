@@ -14,8 +14,9 @@ batch_size = 30
 hidden_size = 10
 learning_rate = 1.0
 
+# データの読み込み、モデルとオプティマイザの生成
 x, t = spiral.load_data()
-model = TwoLayerNet(input_size=2, hidden_size=hidden_size, output_size=3)
+model = TwoLayerNet(input_size=x.shape[1], hidden_size=hidden_size, output_size=t.shape[1])
 optimizer = SGD(lr=learning_rate)
 
 # 学習で使用する変数
@@ -46,7 +47,7 @@ for epoch in range(max_epoch):
         # 定期的に学習経過を出力
         if (iters+1) % 10 == 0:
             avg_loss = total_loss / loss_count
-            print('| epoch %d |  iter %d / %d | loss %.2f'
+            print('| epoch %d | iter %d / %d | loss %.2f'
                   % (epoch + 1, iters + 1, max_iters, avg_loss))
             loss_list.append(avg_loss)
             total_loss, loss_count = 0, 0
