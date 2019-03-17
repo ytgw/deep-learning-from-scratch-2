@@ -1,9 +1,9 @@
 # coding: utf-8
 import sys
 sys.path.append('..')
-from common.np import *  # import numpy as np
+from common.config import np
 from common.layers import Embedding
-from ch04.negative_sampling_layer import NegativeSamplingLoss
+from negative_sampling_layer import NegativeSamplingLoss
 
 
 class CBOW:
@@ -16,7 +16,7 @@ class CBOW:
 
         # レイヤの生成
         self.in_layers = []
-        for i in range(2 * window_size):
+        for _ in range(2 * window_size):
             layer = Embedding(W_in)  # Embeddingレイヤを使用
             self.in_layers.append(layer)
         self.ns_loss = NegativeSamplingLoss(W_out, corpus, power=0.75, sample_size=5)
