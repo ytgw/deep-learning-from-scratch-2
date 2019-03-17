@@ -35,7 +35,7 @@ class Affine:
         return out
 
     def backward(self, dout):
-        W, _ = self.params
+        W = self.params[0]
         dx = np.dot(dout, W.T)
         dW = np.dot(self.x.T, dout)
         db = np.sum(dout, axis=0)
