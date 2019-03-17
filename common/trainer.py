@@ -36,9 +36,10 @@ class Trainer:
                 # 勾配を求め、パラメータを更新
                 loss = model.forward(batch_x, batch_t)
                 model.backward()
+                params, grads = remove_duplicate(model.params, model.grads)  # 共有された重みを1つに集約
                 if max_grad is not None:
                     raise Exception('error')
-                optimizer.update(model.params, model.grads)
+                optimizer.update(params, grads)
                 total_loss += loss
                 loss_count += 1
 
@@ -61,3 +62,35 @@ class Trainer:
         plt.xlabel('iterations (x' + str(self.eval_interval) + ')')
         plt.ylabel('loss')
         plt.show()
+
+
+def remove_duplicate(params, grads):
+    '''
+    パラメータ配列中の重複する重みをひとつに集約し、
+    その重みに対応する勾配を加算する
+    '''
+    params, grads = params[:], grads[:]  # copy list
+
+    while True:
+        find_flg = False
+        L = len(params)
+
+        for i in range(0, L - 1):
+            for j in range(i + 1, L):
+                # 重みを共有する場合
+                if params[i] is params[j]:
+                    grads[i] += grads[j]  # 勾配の加算
+                    find_flg = True
+                    params.pop(j)
+                    grads.pop(j)
+                # 転置行列として重みを共有する場合（weight tying）
+                elif params[i].ndim == 2 and params[j].ndim == 2 and \
+                    params[i].T.shape == params[j].shape and np.all(params[i].T == params[j]):
+                    raise Exception('error')
+
+                if find_flg: break
+            if find_flg: break
+
+        if not find_flg: break
+
+    return params, grads
