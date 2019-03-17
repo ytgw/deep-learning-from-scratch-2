@@ -1,6 +1,7 @@
 # coding: utf-8
 from common.config import np, GPU
 from common.layers import Embedding
+from common.functions import softmax
 
 
 class RNN:
@@ -178,8 +179,7 @@ class TimeSoftmaxWithLoss:
         ts = ts.reshape(N * T)
         mask = mask.reshape(N * T)
 
-        xs = xs - np.max(xs, axis=1, keepdims=True)
-        ys = np.exp(xs) / np.sum(np.exp(xs), axis=1, keepdims=True)
+        ys = softmax(xs)
         ls = np.log(np.clip(ys[np.arange(N * T), ts], 1e-6, 1))
         ls *= mask  # ignore_labelに該当するデータは損失を0にする
         loss = -np.sum(ls)

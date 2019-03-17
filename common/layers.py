@@ -1,5 +1,6 @@
 # coding: utf-8
 from common.config import np, GPU
+from common.functions import sigmoid, softmax, cross_entropy_error
 
 
 class MatMul:
@@ -52,22 +53,29 @@ class SoftmaxWithLoss:
         self.t = None  # 教師ラベル
 
     def forward(self, x, t):
-        # softmax
-        x = x - np.max(x, axis=1, keepdims=True)
-        y = np.exp(x) / np.sum(np.exp(x), axis=1, keepdims=True)
-
-        # cross entropy error
-        batch_size = t.shape[0]
-        log_y = np.log(np.clip(y, 1e-6, 1))
-        loss = -np.sum(t * log_y) / batch_size
-
-        self.y = y
         self.t = t
+        self.y = softmax(x)
+
+        loss = cross_entropy_error(self.y, self.t)
         return loss
 
     def backward(self, dout=1):
         batch_size = self.t.shape[0]
         dx = dout * (self.y - self.t) / batch_size
+        return dx
+
+
+class Sigmoid:
+    def __init__(self):
+        self.params, self.grads = [], []
+        self.out = None
+
+    def forward(self, x):
+        self.out = sigmoid(x)
+        return self.out
+
+    def backward(self, dout):
+        dx = dout * (1.0 - self.out) * self.out
         return dx
 
 
@@ -78,17 +86,11 @@ class SigmoidWithLoss:
         self.t = None  # 教師データ
 
     def forward(self, x, t):
-        # sigmoid
-        y = 1 / (1 + np.exp(-x))
-
-        # cross entropy error
-        batch_size = t.shape[0]
-        log_y = np.log(np.clip(y, 1e-6, 1))
-        log_not_y = np.log(np.clip(1-y, 1e-6, 1))
-        loss = -np.sum(t*log_y + (1-t)*log_not_y) / batch_size
-
-        self.y = y
         self.t = t
+        self.y = sigmoid(x)
+
+        y = np.c_[1.0 - self.y, self.y]
+        loss = cross_entropy_error(y, self.t)
         return loss
 
     def backward(self, dout=1):
