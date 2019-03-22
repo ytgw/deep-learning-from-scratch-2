@@ -5,6 +5,8 @@ import numpy
 import time
 import matplotlib.pyplot as plt
 from common.config import np
+from common.util import clip_grads
+
 
 class Trainer:
     def __init__(self, model, optimizer):
@@ -38,7 +40,7 @@ class Trainer:
                 model.backward()
                 params, grads = remove_duplicate(model.params, model.grads)  # 共有された重みを1つに集約
                 if max_grad is not None:
-                    raise Exception('error')
+                    clip_grads(grads, max_grad)
                 optimizer.update(params, grads)
                 total_loss += loss
                 loss_count += 1
@@ -111,7 +113,7 @@ class RnnlmTrainer:
                 model.backward()
                 params, grads = remove_duplicate(model.params, model.grads)  # 共有された重みを1つに集約
                 if max_grad is not None:
-                    raise Exception('error')
+                    clip_grads(grads, max_grad)
                 optimizer.update(params, grads)
                 total_loss += loss
                 loss_count += 1
@@ -158,8 +160,11 @@ def remove_duplicate(params, grads):
                     grads.pop(j)
                 # 転置行列として重みを共有する場合（weight tying）
                 elif params[i].ndim == 2 and params[j].ndim == 2 and \
-                    params[i].T.shape == params[j].shape and np.all(params[i].T == params[j]):
-                    raise Exception('error')
+                     params[i].T.shape == params[j].shape and np.all(params[i].T == params[j]):
+                    grads[i] += grads[j].T
+                    find_flg = True
+                    params.pop(j)
+                    grads.pop(j)
 
                 if find_flg: break
             if find_flg: break

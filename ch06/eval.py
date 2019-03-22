@@ -9,7 +9,7 @@ from common.util import eval_perplexity
 
 if __name__ == '__main__':
     model = Rnnlm()
-    #model = BetterRnnlm()
+    # model = BetterRnnlm()
 
     # 学習済みのパラメータの読み込み
     model.load_params()

@@ -30,8 +30,7 @@ optimizer = SGD(lr)
 trainer = RnnlmTrainer(model, optimizer)
 
 # 勾配クリッピングを適用して学習
-trainer.fit(xs, ts, max_epoch, batch_size, time_size, max_grad,
-            eval_interval=20)
+trainer.fit(xs, ts, max_epoch, batch_size, time_size, max_grad, eval_interval=20)
 trainer.plot(ylim=(0, 500))
 
 # テストデータで評価

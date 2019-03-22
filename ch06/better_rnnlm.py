@@ -1,8 +1,9 @@
 # coding: utf-8
 import sys
 sys.path.append('..')
-from common.time_layers import *
-from common.np import *  # import numpy as np
+from common.layers import Dropout
+from common.time_layers import TimeEmbedding, TimeLSTM, TimeAffine, TimeSoftmaxWithLoss
+from common.config import np
 from common.base_model import BaseModel
 
 
@@ -15,11 +16,11 @@ class BetterRnnlm(BaseModel):
      [2] Using the Output Embedding to Improve Language Models (https://arxiv.org/abs/1608.05859)
      [3] Tying Word Vectors and Word Classifiers (https://arxiv.org/pdf/1611.01462.pdf)
     '''
-    def __init__(self, vocab_size=10000, wordvec_size=650,
-                 hidden_size=650, dropout_ratio=0.5):
+    def __init__(self, vocab_size=10000, wordvec_size=650, hidden_size=650, dropout_ratio=0.5):
         V, D, H = vocab_size, wordvec_size, hidden_size
         rn = np.random.randn
 
+        # 重みの初期化
         embed_W = (rn(V, D) / 100).astype('f')
         lstm_Wx1 = (rn(D, 4 * H) / np.sqrt(D)).astype('f')
         lstm_Wh1 = (rn(H, 4 * H) / np.sqrt(H)).astype('f')
@@ -29,30 +30,32 @@ class BetterRnnlm(BaseModel):
         lstm_b2 = np.zeros(4 * H).astype('f')
         affine_b = np.zeros(V).astype('f')
 
+        # レイヤの生成
         self.layers = [
             TimeEmbedding(embed_W),
-            TimeDropout(dropout_ratio),
+            Dropout(dropout_ratio),
             TimeLSTM(lstm_Wx1, lstm_Wh1, lstm_b1, stateful=True),
-            TimeDropout(dropout_ratio),
+            Dropout(dropout_ratio),
             TimeLSTM(lstm_Wx2, lstm_Wh2, lstm_b2, stateful=True),
-            TimeDropout(dropout_ratio),
+            Dropout(dropout_ratio),
             TimeAffine(embed_W.T, affine_b)  # weight tying!!
         ]
         self.loss_layer = TimeSoftmaxWithLoss()
         self.lstm_layers = [self.layers[2], self.layers[4]]
-        self.drop_layers = [self.layers[1], self.layers[3], self.layers[5]]
+        self.drop_layers_idx = [1, 3, 5]
 
+        # すべての重みと勾配をリストにまとめる
         self.params, self.grads = [], []
         for layer in self.layers:
             self.params += layer.params
             self.grads += layer.grads
 
     def predict(self, xs, train_flg=False):
-        for layer in self.drop_layers:
-            layer.train_flg = train_flg
-
-        for layer in self.layers:
-            xs = layer.forward(xs)
+        for i, layer in enumerate(self.layers):
+            if i in self.drop_layers_idx:
+                xs = layer.forward(xs, train_flg)
+            else:
+                xs = layer.forward(xs)
         return xs
 
     def forward(self, xs, ts, train_flg=True):

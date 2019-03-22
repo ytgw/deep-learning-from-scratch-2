@@ -3,7 +3,7 @@ import sys
 sys.path.append('..')
 import os
 import pickle
-from common.np import *
+from common.config import np, GPU
 from common.util import to_gpu, to_cpu
 
 
