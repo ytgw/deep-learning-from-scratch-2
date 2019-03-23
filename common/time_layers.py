@@ -42,7 +42,7 @@ class TimeRNN:
         self.grads = [np.zeros_like(Wx), np.zeros_like(Wh), np.zeros_like(b)]
         self.layers = None
 
-        self.h = None
+        self.h, self.dh = None, None
         self.stateful = stateful
 
     def forward(self, xs):
@@ -82,6 +82,7 @@ class TimeRNN:
 
         for i, grad in enumerate(grads):
             self.grads[i][...] = grad
+        self.dh = dh
 
         return dxs
 
@@ -172,6 +173,7 @@ class TimeLSTM:
         self.layers = None
 
         self.h, self.c = None, None
+        self.dh = None
         self.stateful = stateful
 
     def forward(self, xs):
@@ -214,7 +216,7 @@ class TimeLSTM:
 
         for i, grad in enumerate(grads):
             self.grads[i][...] = grad
-
+        self.dh = dh
         return dxs
 
     def set_state(self, h, c=None):

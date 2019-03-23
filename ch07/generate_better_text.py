@@ -1,7 +1,7 @@
 # coding: utf-8
 import sys
 sys.path.append('..')
-from common.np import *
+from common.config import np
 from rnnlm_gen import BetterRnnlmGen
 from dataset import ptb
 

@@ -1,7 +1,8 @@
 # coding: utf-8
 import sys
 sys.path.append('..')
-from common.time_layers import *
+from common.config import np
+from common.time_layers import TimeEmbedding, TimeLSTM, TimeAffine, TimeSoftmaxWithLoss
 from common.base_model import BaseModel
 
 
@@ -33,8 +34,8 @@ class Encoder:
         dhs[:, -1, :] = dh
 
         dout = self.lstm.backward(dhs)
-        dout = self.embed.backward(dout)
-        return dout
+        self.embed.backward(dout)
+        return None
 
 
 class Decoder:
@@ -69,7 +70,7 @@ class Decoder:
     def backward(self, dscore):
         dout = self.affine.backward(dscore)
         dout = self.lstm.backward(dout)
-        dout = self.embed.backward(dout)
+        self.embed.backward(dout)
         dh = self.lstm.dh
         return dh
 
@@ -111,8 +112,8 @@ class Seq2seq(BaseModel):
     def backward(self, dout=1):
         dout = self.softmax.backward(dout)
         dh = self.decoder.backward(dout)
-        dout = self.encoder.backward(dh)
-        return dout
+        self.encoder.backward(dh)
+        return None
 
     def generate(self, xs, start_id, sample_size):
         h = self.encoder.forward(xs)
