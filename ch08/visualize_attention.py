@@ -7,8 +7,7 @@ import matplotlib.pyplot as plt
 from attention_seq2seq import AttentionSeq2seq
 
 
-(x_train, t_train), (x_test, t_test) = \
-    sequence.load_data('date.txt')
+(x_train, t_train), (x_test, t_test) = sequence.load_data('date.txt')
 char_to_id, id_to_char = sequence.get_vocab()
 
 # Reverse input
@@ -23,7 +22,7 @@ model.load_params()
 
 _idx = 0
 def visualize(attention_map, row_labels, column_labels):
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots()
     ax.pcolor(attention_map, cmap=plt.cm.Greys_r, vmin=0.0, vmax=1.0)
 
     ax.patch.set_facecolor('black')
@@ -47,6 +46,9 @@ for _ in range(5):
     model.forward(x, t)
     d = model.decoder.attention.attention_weights
     d = np.array(d)
+    print('x.shape :', x.shape) # (N, T_enc)
+    print('t.shape :', t.shape) # (N, T_dec)
+    print('d.shape :', d.shape) # (T_dec-1, N, T_enc)
     attention_map = d.reshape(d.shape[0], d.shape[2])
 
     # reverse for print

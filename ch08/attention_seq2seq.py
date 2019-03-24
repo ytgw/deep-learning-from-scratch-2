@@ -1,7 +1,8 @@
 # coding: utf-8
 import sys
 sys.path.append('..')
-from common.time_layers import *
+from common.config import np
+from common.time_layers import TimeEmbedding, TimeLSTM, TimeAffine, TimeSoftmaxWithLoss
 from ch07.seq2seq import Encoder, Seq2seq
 from ch08.attention_layer import TimeAttention
 
@@ -14,8 +15,8 @@ class AttentionEncoder(Encoder):
 
     def backward(self, dhs):
         dout = self.lstm.backward(dhs)
-        dout = self.embed.backward(dout)
-        return dout
+        self.embed.backward(dout)
+        return None
 
 
 class AttentionDecoder:
@@ -42,7 +43,7 @@ class AttentionDecoder:
             self.grads += layer.grads
 
     def forward(self, xs, enc_hs):
-        h = enc_hs[:,-1]
+        h = enc_hs[:,-1,:]
         self.lstm.set_state(h)
 
         out = self.embed.forward(xs)
@@ -55,7 +56,7 @@ class AttentionDecoder:
 
     def backward(self, dscore):
         dout = self.affine.backward(dscore)
-        N, T, H2 = dout.shape
+        H2 = dout.shape[2]
         H = H2 // 2
 
         dc, ddec_hs0 = dout[:,:,:H], dout[:,:,H:]
@@ -63,7 +64,7 @@ class AttentionDecoder:
         ddec_hs = ddec_hs0 + ddec_hs1
         dout = self.lstm.backward(ddec_hs)
         dh = self.lstm.dh
-        denc_hs[:, -1] += dh
+        denc_hs[:,-1,:] += dh
         self.embed.backward(dout)
 
         return denc_hs
@@ -71,12 +72,11 @@ class AttentionDecoder:
     def generate(self, enc_hs, start_id, sample_size):
         sampled = []
         sample_id = start_id
-        h = enc_hs[:, -1]
+        h = enc_hs[:,-1,:]
         self.lstm.set_state(h)
 
         for _ in range(sample_size):
-            x = np.array([sample_id]).reshape((1, 1))
-
+            x = np.array(sample_id).reshape((1, 1))
             out = self.embed.forward(x)
             dec_hs = self.lstm.forward(out)
             c = self.attention.forward(enc_hs, dec_hs)
@@ -84,16 +84,16 @@ class AttentionDecoder:
             score = self.affine.forward(out)
 
             sample_id = np.argmax(score.flatten())
-            sampled.append(sample_id)
+            sampled.append(int(sample_id))
 
         return sampled
 
 
 class AttentionSeq2seq(Seq2seq):
     def __init__(self, vocab_size, wordvec_size, hidden_size):
-        args = vocab_size, wordvec_size, hidden_size
-        self.encoder = AttentionEncoder(*args)
-        self.decoder = AttentionDecoder(*args)
+        V, D, H = vocab_size, wordvec_size, hidden_size
+        self.encoder = AttentionEncoder(V, D, H)
+        self.decoder = AttentionDecoder(V, D, H)
         self.softmax = TimeSoftmaxWithLoss()
 
         self.params = self.encoder.params + self.decoder.params
