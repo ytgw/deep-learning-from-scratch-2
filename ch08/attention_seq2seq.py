@@ -36,6 +36,7 @@ class AttentionDecoder:
         self.attention = TimeAttention()
         self.affine = TimeAffine(affine_W, affine_b)
         layers = [self.embed, self.lstm, self.attention, self.affine]
+        self.attention_weights_at_generate = None
 
         self.params, self.grads = [], []
         for layer in layers:
@@ -75,6 +76,7 @@ class AttentionDecoder:
         h = enc_hs[:,-1,:]
         self.lstm.set_state(h)
 
+        self.attention_weights_at_generate = []
         for _ in range(sample_size):
             x = np.array(sample_id).reshape((1, 1))
             out = self.embed.forward(x)
@@ -83,6 +85,7 @@ class AttentionDecoder:
             out = np.concatenate((c, dec_hs), axis=2)
             score = self.affine.forward(out)
 
+            self.attention_weights_at_generate.append(self.attention.attention_weights[0])
             sample_id = np.argmax(score.flatten())
             sampled.append(int(sample_id))
 
